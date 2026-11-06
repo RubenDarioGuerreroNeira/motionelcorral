@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>El Corral - El Sello Dorado</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        canvas { width: 1080px; height: 1920px; background: #4A0E0E; }
+    </style>
+</head>
+<body>
+    <canvas id="c" width="1080" height="1920"></canvas>
+    <script>
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const W = 1080, H = 1920;
+        const CX = W / 2, CY = H / 2;
+
+        // Paleta de marca
+        const C_BURGUNDY = '#4A0E0E';
+        const C_YELLOW = '#FFC107';
+        const C_RED = '#D32F2F';
+        const C_WHITE = '#FFFFFF';
+
+        // Easing functions
+        const easeOutExpo = t => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+        const easeInOutQuad = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        const spring = t => {
+            const c4 = (2 * Math.PI) / 3;
+            return t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+        };
+
+        window.ready = () => {}; // Hook para render.py
+
+        window.seek = function(t, opts) {
+            // t va de 0.0 a 1.0. 15 segundos a 60fps = 900 frames.
+            const frame = t * 900;
+            const beat = frame / 30; // 120 BPM = 2 beats por segundo = 30 frames por beat
+
+            // Fondo base
+            ctx.fillStyle = C_BURGUNDY;
+            ctx.fillRect(0, 0, W, H);
+
+            ctx.save();
+            ctx.translate(CX, CY);
+
+            // --- BEAT 0-4 (0-120 frames): HOOK - Círculo a Marco ---
+            if (beat < 4) {
+                const localT = beat / 4;
+                const eased = spring(localT);
+                
+                // Círculo dorado (Pan superior) que cae y se transforma
+                const radius = 150 + (eased * 250);
+                ctx.fillStyle = C_YELLOW;
+                ctx.beginPath();
+                ctx.arc(0, -100 + (eased * 100), radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Marco ornamental blanco que se dibuja
+                ctx.strokeStyle = C_WHITE;
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                const frameProgress = easeOutExpo(localT);
+                ctx.ellipse(0, 0, 300 * frameProgress, 400 * frameProgress, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // --- BEAT 4-8 (120-240 frames): KINETIC TYPE ---
+            else if (beat < 8) {
+                const localT = (beat - 4) / 4;
+                
+                // Marco ya está formado
+                ctx.strokeStyle = C_WHITE;
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 300, 400, 0, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.fillStyle = C_RED;
+                ctx.font = '160px Anton';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // "EL" entra desde la izquierda
+                const elX = -200 + (easeOutExpo(localT) * 200);
+                ctx.fillText("EL", elX, -50);
+
+                // "CORRAL" entra desde la derecha
+                const corralX = 200 - (easeOutExpo(localT) * 200);
+                ctx.fillText("CORRAL", corralX, 120);
+            }
+
+            // --- BEAT 8-12 (240-360 frames): 2D TO 3D MOMENT ---
+            else if (beat < 12) {
+                const localT = (beat - 8) / 4;
+                
+                // Marco y texto estáticos
+                ctx.strokeStyle = C_WHITE;
+                ctx.lineWidth = 8;
+                ctx.beginPath(); ctx.ellipse(0, 0, 300, 400, 0, 0, Math.PI * 2); ctx.stroke();
+                ctx.fillStyle = C_RED; ctx.font = '160px Anton'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText("EL", -200, -50);
+                ctx.fillText("CORRAL", 200, 120);
+
+                // Pan inferior extruye en 3D (simulado con escala Y y sombra)
+                const extrude = Math.sin(localT * Math.PI); 
+                ctx.save();
+                ctx.translate(0, 300);
+                ctx.scale(1, 1 + (extrude * 0.4));
+                ctx.fillStyle = C_YELLOW;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 280, 90, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // Sombra falsa para efecto 3D
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(0, 20, 280, 90, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // --- BEAT 12-16 (360-480 frames): DATA / UI MOMENT ---
+            else if (beat < 16) {
+                const localT = (beat - 12) / 4;
+                
+                // Logo estático
+                ctx.strokeStyle = C_WHITE; ctx.lineWidth = 8;
+                ctx.beginPath(); ctx.ellipse(0, 0, 300, 400, 0, 0, Math.PI * 2); ctx.stroke();
+                ctx.fillStyle = C_RED; ctx.font = '160px Anton'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText("EL", -200, -50); ctx.fillText("CORRAL", 200, 120);
+                ctx.fillStyle = C_YELLOW; ctx.beginPath(); ctx.ellipse(0, 300, 280, 90, 0, 0, Math.PI * 2); ctx.fill();
+
+                // UI Overlay
+                ctx.fillStyle = C_WHITE;
+                ctx.font = '60px Montserrat';
+                ctx.textAlign = 'center';
+                const text = "EST. 1983";
+                const chars = Math.floor(localT * text.length);
+                ctx.fillText(text.substring(0, chars), 0, 500);
+
+                // Barra de progreso
+                ctx.fillStyle = C_RED;
+                ctx.fillRect(-150, 540, 300 * easeOutExpo(localT), 12);
+            }
+
+            // --- BEAT 16-24 (480-720 frames): STRONGEST MOMENT (Ensamblaje Final) ---
+            else if (beat < 24) {
+                const localT = (beat - 16) / 8;
+                const scale = 1 + (spring(localT) * 0.15); // Pequeño pop hacia la cámara
+                
+                ctx.save();
+                ctx.scale(scale, scale);
+                
+                ctx.strokeStyle = C_WHITE; ctx.lineWidth = 8;
+                ctx.beginPath(); ctx.ellipse(0, 0, 300, 400, 0, 0, Math.PI * 2); ctx.stroke();
+                
+                ctx.fillStyle = C_RED; ctx.font = '160px Anton'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText("EL", -200, -50); ctx.fillText("CORRAL", 200, 120);
+                
+                ctx.fillStyle = C_YELLOW; ctx.beginPath(); ctx.ellipse(0, 300, 280, 90, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
+
+            // --- BEAT 24-28 (720-840 frames): SLOGAN REVEAL ---
+            else if (beat < 28) {
+                const localT = (beat - 24) / 4;
+                
+                ctx.strokeStyle = C_WHITE; ctx.lineWidth = 8;
+                ctx.beginPath(); ctx.ellipse(0, 0, 300, 400, 0, 0, Math.PI * 2); ctx.stroke();
+                ctx.fillStyle = C_RED; ctx.font = '160px Anton'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText("EL", -200, -50); ctx.fillText("CORRAL", 200, 120);
+                ctx.fillStyle = C_YELLOW; ctx.beginPath(); ctx.ellipse(0, 300, 280, 90, 0, 0, Math.PI * 2); ctx.fill();
+
+                // Slogan dibujándose
+                ctx.fillStyle = C_YELLOW;
+                ctx.font = '50px Montserrat';
+                ctx.textAlign = 'center';
+                ctx.globalAlpha = easeOutExpo(localT);
+                ctx.fillText("Sabor que une", 0, 600);
+                ctx.globalAlpha = 1.0;
+            }
+
+            // --- BEAT 28-30 (840-900 frames): END TITLE & LOOP PREP ---
+            else {
+                const localT = (beat - 28) / 2;
+                const shrink = 1 - easeInOutQuad(localT); // Vuelve a escala 0
+                
+                ctx.save();
+                ctx.scale(shrink, shrink);
+                ctx.globalAlpha = shrink;
+                
+                ctx.strokeStyle = C_WHITE; ctx.lineWidth = 8;
+                ctx.beginPath(); ctx.ellipse(0, 0, 300, 400, 0, 0, Math.PI * 2); ctx.stroke();
+                ctx.fillStyle = C_RED; ctx.font = '160px Anton'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText("EL", -200, -50); ctx.fillText("CORRAL", 200, 120);
+                ctx.fillStyle = C_YELLOW; ctx.beginPath(); ctx.ellipse(0, 300, 280, 90, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = C_YELLOW; ctx.font = '50px Montserrat'; ctx.fillText("Sabor que une", 0, 600);
+                
+                ctx.restore();
+
+                // Preparar el loop: en el último frame, dibujar solo el círculo inicial
+                if (localT > 0.9) {
+                    const loopT = (localT - 0.9) / 0.1;
+                    ctx.fillStyle = C_YELLOW;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 150 + (loopT * 0), 0, Math.PI * 2); // Mantiene el radio inicial
+                    ctx.fill();
+                }
+            }
+
+            ctx.restore();
+        };
+
+        // Render inicial
+        window.seek(0);
+    </script>
+</body>
+</html>
